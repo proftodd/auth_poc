@@ -5,15 +5,7 @@
 </template>
 
 <script setup lang="ts">
-const clientId = 'Iv1.799eb98fe903a65c'
-const redirectUri = 'https://simply-included-dassie.ngrok-free.app/Auth/Login'
-const state = 'abc123'
-const allowSignup = 'false'
-const url = new URL('https://github.com/login/oauth/authorize')
-url.searchParams.append('client_id', clientId)
-url.searchParams.append('redirect_uri', redirectUri)
-url.searchParams.append('state', state)
-url.searchParams.append('allow_signup', allowSignup)
+const url = new URL('http://localhost:5164/Auth/Authorize')
 const urlString  = url.toString()
 console.log(urlString)
 </script>
