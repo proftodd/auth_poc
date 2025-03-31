@@ -5,7 +5,7 @@
 </template>
 
 <script setup lang="ts">
-const url = new URL('http://localhost:5164/Auth/Authorize')
+const url = new URL('http://localhost:5164/auth/login')
 const urlString  = url.toString()
 
 const doLogin = () => {

@@ -5,27 +5,28 @@ using Microsoft.Extensions.Options;
 namespace AuthPocBackend.Controllers;
 
 [ApiController]
-[Route("[controller]/[action]")]
+[Route("[controller]")]
 public class AuthController(ILogger<AuthController> logger, IOptions<GithubOptions> options) : ControllerBase
 {
     private const string State = "abc123";
     private readonly GithubOptions _options = options.Value;
     private static readonly HttpClient Client = new();
 
-    [HttpGet]
-    public IActionResult Authorize()
+    [HttpGet("login")]
+    public IActionResult Login()
     {
         var queryString = HttpUtility.ParseQueryString(string.Empty);
         queryString.Add("client_id", _options.ClientId);
         queryString.Add("redirect_uri", _options.RedirectUri);
         queryString.Add("state", State);
         queryString.Add("allow_signup", "false");
-        var url = new Uri(_options.AuthUrl + "/authorize?" + queryString);
-        return Redirect(url.ToString());
+
+        var url = $"{_options.AuthUrl}/authorize?{queryString}";
+        return Redirect(url);
     }
 
-    [HttpGet]
-    public async Task<IActionResult> Login(string code, string state)
+    [HttpGet("callback")]
+    public async Task<IActionResult> Callback(string code, string state)
     {
         if (state != State)
         {
@@ -41,17 +42,28 @@ public class AuthController(ILogger<AuthController> logger, IOptions<GithubOptio
                 new KeyValuePair<string, string>("redirect_uri", _options.RedirectUri),
             ]
         );
-        using var response = await Client.PostAsync(_options.AuthUrl + "/access_token", JsonContent.Create(data));
-        if (!response.IsSuccessStatusCode)
-        {
-            return Unauthorized();
-        }
+        using var response = await Client.PostAsync($"{_options.AuthUrl}/access_token", new FormUrlEncodedContent(data));
+        response.EnsureSuccessStatusCode();
 
         var responseString = await response.Content.ReadAsStringAsync();
-        var queryParams = System.Web.HttpUtility.ParseQueryString(responseString);
+        var queryParams = HttpUtility.ParseQueryString(responseString);
         var accessToken = queryParams["access_token"];
-        return string.IsNullOrEmpty(accessToken)
+
+        if (string.IsNullOrEmpty(accessToken))
+        {
+            return Unauthorized("Failed to retrieve access token.");
+        }
+        
+        HttpContext.Session.SetString("GithubToken", accessToken);
+        return Redirect($"http://localhost:5173/dashboard?token={accessToken}");
+    }
+
+    [HttpGet("token")]
+    public IActionResult GetToken()
+    {
+        var token = HttpContext.Session.GetString("GithubToken");
+        return token == null
             ? Unauthorized()
-            : Ok(new { access_token = accessToken });
+            : Ok(new { access_token = token });
     }
 }
