@@ -1,13 +1,16 @@
 <template>
   <div class="login">
-    <a :href="urlString">Login to Github</a>
+    <button @click="doLogin">Login to Github</button>
   </div>
 </template>
 
 <script setup lang="ts">
 const url = new URL('http://localhost:5164/Auth/Authorize')
 const urlString  = url.toString()
-console.log(urlString)
+
+const doLogin = () => {
+  window.location.href = urlString
+}
 </script>
 
 <style>

@@ -1,8 +1,14 @@
 using AuthPocBackend.Controllers;
 
+const string myAllowAnyOrigin = "_myAllowAnyOrigin";
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(name: myAllowAnyOrigin, policy => policy.AllowAnyOrigin());
+});
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
@@ -23,6 +29,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseCors(myAllowAnyOrigin);
 app.UseAuthorization();
 app.MapControllers();
 

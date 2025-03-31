@@ -13,7 +13,7 @@ public class AuthController(ILogger<AuthController> logger, IOptions<GithubOptio
     private static readonly HttpClient Client = new();
 
     [HttpGet]
-    public async Task<IActionResult> Authorize()
+    public IActionResult Authorize()
     {
         var queryString = HttpUtility.ParseQueryString(string.Empty);
         queryString.Add("client_id", _options.ClientId);
@@ -21,15 +21,17 @@ public class AuthController(ILogger<AuthController> logger, IOptions<GithubOptio
         queryString.Add("state", State);
         queryString.Add("allow_signup", "false");
         var url = new Uri(_options.AuthUrl + "/authorize?" + queryString);
-        using var response = await Client.GetAsync(url);
-        response.EnsureSuccessStatusCode();
-        var responseString = await response.Content.ReadAsStringAsync();
-        return new OkObjectResult(responseString);
+        return Redirect(url.ToString());
     }
 
     [HttpGet]
     public async Task<IActionResult> Login(string code, string state)
     {
+        if (state != State)
+        {
+            logger.LogWarning("State mismatch. Possible CSRF attach.");
+            return new UnauthorizedResult();
+        }
         logger.LogInformation("Redirect from Github received: code = [{Code}] state = [{State}", code, state);
         var data = new Dictionary<string, string>(
             [
@@ -40,9 +42,16 @@ public class AuthController(ILogger<AuthController> logger, IOptions<GithubOptio
             ]
         );
         using var response = await Client.PostAsync(_options.AuthUrl + "/access_token", JsonContent.Create(data));
-        return response.IsSuccessStatusCode
-            ? new OkObjectResult(await response.Content.ReadAsStringAsync())
-            : new UnauthorizedResult()
-        ;
+        if (!response.IsSuccessStatusCode)
+        {
+            return Unauthorized();
+        }
+
+        var responseString = await response.Content.ReadAsStringAsync();
+        var queryParams = System.Web.HttpUtility.ParseQueryString(responseString);
+        var accessToken = queryParams["access_token"];
+        return string.IsNullOrEmpty(accessToken)
+            ? Unauthorized()
+            : Ok(new { access_token = accessToken });
     }
 }
