@@ -1,3 +1,4 @@
+using System.Net.Http.Headers;
 using System.Web;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
@@ -53,9 +54,18 @@ public class AuthController(ILogger<AuthController> logger, IOptions<GithubOptio
         {
             return Unauthorized("Failed to retrieve access token.");
         }
-        
+
+        using var userRequest = new HttpRequestMessage(HttpMethod.Get, "https://api.github.com/user");
+        userRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        userRequest.Headers.Add("Accept", "application/vnd.github+json");
+        userRequest.Headers.Add("User-Agent", "Auth POC Backend");
+        userRequest.Headers.Add("X-Github-Api-Version", "2022-11-28");
+        var userResponse = await Client.SendAsync(userRequest);
+        userResponse.EnsureSuccessStatusCode();
+        var user = await userResponse.Content.ReadFromJsonAsync<Models.User>();
+
         HttpContext.Session.SetString("GithubToken", accessToken);
-        return Redirect($"http://localhost:5173/dashboard?token={accessToken}");
+        return Redirect($"http://localhost:5173/dashboard?token={user}");
     }
 
     [HttpGet("token")]
