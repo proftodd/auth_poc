@@ -17,6 +17,8 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.Configure<GithubOptions>(
     builder.Configuration.GetSection(GithubOptions.Github));
+builder.Services.Configure<JwtTokenOptions>(
+    builder.Configuration.GetSection(JwtTokenOptions.Jwt));
 
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(options =>

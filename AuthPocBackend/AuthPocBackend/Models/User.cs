@@ -8,4 +8,5 @@ public record User
     public bool SiteAdmin { get; init; } = false;
     public string Company { get; init; } = string.Empty;
     public string OrganizationsUrl { get; init; } = string.Empty;
+    public string Jwt { get; internal set; } = string.Empty;
 }

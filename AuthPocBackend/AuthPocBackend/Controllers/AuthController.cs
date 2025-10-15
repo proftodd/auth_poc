@@ -1,17 +1,34 @@
+using System.IdentityModel.Tokens.Jwt;
 using System.Net.Http.Headers;
+using System.Security.Claims;
+using System.Security.Cryptography.X509Certificates;
 using System.Web;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
 
 namespace AuthPocBackend.Controllers;
 
 [ApiController]
 [Route("[controller]")]
-public class AuthController(ILogger<AuthController> logger, IOptions<GithubOptions> options) : ControllerBase
+public class AuthController : ControllerBase
 {
     private const string State = "abc123";
-    private readonly GithubOptions _options = options.Value;
+    private readonly GithubOptions _options;
+    private readonly JwtTokenOptions _jwtTokenOptions;
+    private readonly SigningCredentials _credentials;
+    private readonly ILogger<AuthController> _logger;
     private static readonly HttpClient Client = new();
+
+    public AuthController(ILogger<AuthController> logger, IOptions<GithubOptions> options, IOptions<JwtTokenOptions> jwtTokenOptions)
+    {
+        _options = options.Value;
+        _jwtTokenOptions = jwtTokenOptions.Value;
+        var certificate = GetCertificateFromStore(_jwtTokenOptions.Thumbprint);
+        var privateKey = new X509SecurityKey(certificate);
+        _credentials = new SigningCredentials(privateKey, SecurityAlgorithms.RsaSha256Signature);
+        _logger = logger;
+    }
 
     [HttpGet("login")]
     public IActionResult Login()
@@ -31,10 +48,10 @@ public class AuthController(ILogger<AuthController> logger, IOptions<GithubOptio
     {
         if (state != State)
         {
-            logger.LogWarning("State mismatch. Possible CSRF attach.");
+            _logger.LogWarning("State mismatch. Possible CSRF attach.");
             return new UnauthorizedResult();
         }
-        logger.LogInformation("Redirect from Github received: code = [{Code}] state = [{State}", code, state);
+        _logger.LogInformation("Redirect from Github received: code = [{Code}] state = [{State}", code, state);
         var data = new Dictionary<string, string>(
             [
                 new KeyValuePair<string, string>("client_id", _options.ClientId),
@@ -64,6 +81,9 @@ public class AuthController(ILogger<AuthController> logger, IOptions<GithubOptio
         userResponse.EnsureSuccessStatusCode();
         var user = await userResponse.Content.ReadFromJsonAsync<Models.User>();
 
+        var jwt = GenerateToken(user);
+        user.Jwt = jwt;
+
         HttpContext.Session.SetString("GithubToken", accessToken);
         return Redirect($"http://localhost:5173/dashboard?token={user}");
     }
@@ -75,5 +95,52 @@ public class AuthController(ILogger<AuthController> logger, IOptions<GithubOptio
         return token == null
             ? Unauthorized()
             : Ok(new { access_token = token });
+    }
+
+    private static X509Certificate2? GetCertificateFromStore(string thumbprint, StoreName storeName = StoreName.My)
+    {
+        X509Store certStore = new X509Store(storeName, StoreLocation.LocalMachine);
+        try
+        {
+            certStore.Open(OpenFlags.ReadOnly);
+            var certs = certStore.Certificates.Find(X509FindType.FindByThumbprint, thumbprint, false);
+
+            if (certs.Count == 0)
+            {
+                // this is for local testing. I'm guessing there is a better way to do this?
+                certStore.Close();
+                certStore = new X509Store(storeName, StoreLocation.CurrentUser);
+                certStore.Open(OpenFlags.ReadOnly);
+                certs = certStore.Certificates.Find(X509FindType.FindByThumbprint, thumbprint, false);
+            }
+
+            if (certs.Count == 0)
+            {
+                return null;
+            }
+
+            return certs[0];
+        } finally
+        {
+            certStore.Close();
+        }
+    }
+
+    private string GenerateToken(Models.User user)
+    {
+        var claims = new List<Claim>()
+        {
+            new("LE-User-Name", user.Name ?? string.Empty),
+            new("LE-User-Login", user.Login ?? string.Empty),
+            new("LE-Company", user.Company ?? string.Empty),
+        };
+        var token = new JwtSecurityToken(
+            _jwtTokenOptions.Issuer,
+            _jwtTokenOptions.Audience,
+            claims,
+            expires: DateTime.UtcNow.AddDays(1),
+            signingCredentials: _credentials
+        );
+        return new JwtSecurityTokenHandler().WriteToken(token);
     }
 }
