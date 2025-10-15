@@ -2,6 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Net.Http.Headers;
 using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
+using System.Text.Json;
 using System.Web;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
@@ -85,7 +86,8 @@ public class AuthController : ControllerBase
         user.Jwt = jwt;
 
         HttpContext.Session.SetString("GithubToken", accessToken);
-        return Redirect($"http://localhost:5173/dashboard?token={user}");
+        HttpContext.Session.SetString("Jwt", jwt);
+        return Redirect($"http://localhost:5173/dashboard?token={JsonSerializer.Serialize(user)}");
     }
 
     [HttpGet("token")]
@@ -95,6 +97,15 @@ public class AuthController : ControllerBase
         return token == null
             ? Unauthorized()
             : Ok(new { access_token = token });
+    }
+
+    [HttpGet("jwt")]
+    public IActionResult GetJwt()
+    {
+        var jwt = HttpContext.Session.GetString("Jwt");
+        return jwt == null
+            ? Unauthorized()
+            : Ok(new { access_token = jwt });
     }
 
     private static X509Certificate2? GetCertificateFromStore(string thumbprint, StoreName storeName = StoreName.My)
