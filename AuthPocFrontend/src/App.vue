@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { RouterLink, RouterView } from 'vue-router'
 import HelloWorld from './components/HelloWorld.vue'
+import { useAuth } from './composables/useAuth.ts'
+const { user } = useAuth()
 </script>
 
 <template>
@@ -14,6 +16,7 @@ import HelloWorld from './components/HelloWorld.vue'
         <RouterLink to="/">Home</RouterLink>
         <RouterLink to="/about">About</RouterLink>
         <RouterLink to="/login">Login</RouterLink>
+        <RouterLink v-if="user" to="/dashboard">Dashboard</RouterLink>
       </nav>
     </div>
   </header>

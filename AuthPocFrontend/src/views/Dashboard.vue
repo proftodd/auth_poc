@@ -16,39 +16,54 @@
 import { onMounted, ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import type { SearchResult } from '../models/searchResults.ts'
-import type { User } from '../models/user.ts'
+import { useAuth } from '../composables/useAuth'
 
-const user = ref<User | null>(null)
-const searchResult = ref<SearchResult | null>(null)
 const route = useRoute()
 const router = useRouter()
+const { user, init, refreshTokenIfNeeded } = useAuth()
+const searchResult = ref<SearchResult | null>(null)
 
-onMounted(() => {
-    const userJson = Array.isArray(route.query.token)
-        ? route.query.token[0]
-        : route.query.token
-    if (userJson) {
-        user.value = JSON.parse(userJson) as User
-        localStorage.setItem("authedUser", userJson)
-        router.replace("/dashboard")
+onMounted(async () => {
+    const rawToken = route.query.token
+    let tokenQuery: string | undefined
+    if (Array.isArray(rawToken)) {
+        tokenQuery = typeof rawToken[0] === 'string' ? rawToken[0] : undefined
+    } else if (typeof rawToken === 'string') {
+        tokenQuery = rawToken
     } else {
-        const savedUser = localStorage.getItem("authedUser")
-        if (savedUser) {
-            user.value = JSON.parse(savedUser) as User
-        } else {
-            router.push('/')
-        }
+        tokenQuery = undefined
     }
+    init(tokenQuery)
+
+    if (user.value) {
+        router.replace({ path: route.path, query: {} })
+    } else {
+        router.push('/')
+        return
+    }
+
+    await refreshTokenIfNeeded()
 })
 
-const querySubstances = () => {
-    fetch("https://localhost:7063/search?st=h2o&st=water", {
-            method: "GET",
-            headers: {
-                "Authorization": `Bearer ${user.value!.Jwt}`
-            }
-        })
-        .then((res) => res.json())
-        .then((data) => searchResult.value = data)
+const querySubstances = async () => {
+    if (!user.value) {
+        return
+    }
+    const ok = await refreshTokenIfNeeded()
+    if (!ok) {
+        return
+    }
+    try {
+        fetch("https://localhost:7063/search?st=h2o&st=water", {
+                method: "GET",
+                headers: {
+                    "Authorization": `Bearer ${user.value!.Jwt}`
+                }
+            })
+            .then((res) => res.json())
+            .then((data) => searchResult.value = data)
+    } catch (err) {
+        console.error('Search failed', err)
+    }
 }
 </script>
