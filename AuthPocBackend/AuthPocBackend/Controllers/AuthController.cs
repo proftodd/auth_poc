@@ -52,7 +52,7 @@ public class AuthController : ControllerBase
             _logger.LogWarning("State mismatch. Possible CSRF attach.");
             return new UnauthorizedResult();
         }
-        _logger.LogInformation("Redirect from Github received: code = [{Code}] state = [{State}", code, state);
+        _logger.LogInformation("Redirect from Github received: code = [{Code}] state = [{State}]", code, state);
         var data = new Dictionary<string, string>(
             [
                 new KeyValuePair<string, string>("client_id", _options.ClientId),
