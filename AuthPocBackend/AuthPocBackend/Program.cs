@@ -1,4 +1,6 @@
-using AuthPocBackend.Controllers;
+using AuthPocBackend.Endpoints;
+using AuthPocBackend.Models;
+using AuthPocBackend.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Security.Cryptography.X509Certificates;
@@ -15,6 +17,8 @@ builder.Services.AddCors(options =>
               .AllowAnyHeader()
               .AllowAnyMethod());
 });
+builder.Services.AddHttpClient();
+builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
@@ -68,6 +72,7 @@ app.UseHttpsRedirection();
 app.UseCors(myAllowAnyOrigin);
 app.UseSession();
 app.UseAuthorization();
+app.MapAuthEndpoints();
 app.MapControllers();
 
 app.Run();

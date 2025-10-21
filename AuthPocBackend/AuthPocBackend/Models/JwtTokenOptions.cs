@@ -1,4 +1,4 @@
-﻿namespace AuthPocBackend.Controllers;
+﻿namespace AuthPocBackend.Models;
 
 public record JwtTokenOptions
 {

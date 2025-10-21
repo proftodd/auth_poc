@@ -1,4 +1,4 @@
-namespace AuthPocBackend.Controllers;
+namespace AuthPocBackend.Models;
 
 public record GithubOptions
 {
@@ -9,4 +9,5 @@ public record GithubOptions
     public required string ClientSecret { get; init; }
     public required string RedirectUri { get; init; }
     public required string AllowSignup { get; init; }
+    public required string ApiUrl { get; init; }
 }
