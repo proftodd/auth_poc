@@ -11,7 +11,6 @@ export type User = {
 }
 
 const user = ref<User | null>(null)
-// const router = useRouter()
 
 function parseJwt(token: string) {
     try {
