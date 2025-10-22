@@ -23,20 +23,20 @@ public static class AuthEndpoints
             HttpContext ctx) =>
         {
             var (user, jwt) = await auth.HandleCallbackAsync(code, state);
-            ctx.Session.SetString("Jwt", jwt);
-            ctx.Session.SetString("User", JsonSerializer.Serialize(user));
-            return Results.Json(new { user, jwt });
-        });
-
-        group.MapGet("/jwt", (HttpContext ctx) =>
-        {
-            var jwt = ctx.Session.GetString("Jwt");
-            var userJson = ctx.Session.GetString("User");
-            if (jwt == null || userJson == null)
-            {
-                return Results.Unauthorized();
-            }
-            return Results.Ok(new { user = userJson, jwt });
+            var userJson = JsonSerializer.Serialize(user);
+            return Results.Content($@"
+                <html>
+                    <body>
+                        <script>
+                            window.opener.postMessage({{
+                                user: {userJson},
+                                jwt: '{jwt}'
+                            }}, 'http://localhost:5173')
+                            console.log('postMessage sent!')
+                        </script>
+                    </body>
+                </html>
+            ", "text/html");
         });
     }
 }
