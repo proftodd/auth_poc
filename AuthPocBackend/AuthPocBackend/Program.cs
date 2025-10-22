@@ -19,7 +19,7 @@ builder.Services.AddCors(options =>
 });
 builder.Services.AddHttpClient();
 builder.Services.AddScoped<IAuthService, AuthService>();
-builder.Services.AddControllers();
+builder.Services.AddScoped<ISearchService, SearchService>();
 builder.Services.AddEndpointsApiExplorer();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
@@ -66,6 +66,6 @@ app.UseHttpsRedirection();
 app.UseCors(myAllowAnyOrigin);
 app.UseAuthorization();
 app.MapAuthEndpoints();
-app.MapControllers();
+app.MapSearchEndpoints();
 
 app.Run();

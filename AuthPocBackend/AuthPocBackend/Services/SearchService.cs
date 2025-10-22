@@ -1,23 +1,18 @@
 ﻿using AuthPocBackend.Models;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
 
-namespace AuthPocBackend.Controllers;
+namespace AuthPocBackend.Services;
 
-[ApiController]
-[Route("[controller]")]
-public class SearchController(ILogger<SearchController> logger) : ControllerBase
+public interface ISearchService
 {
-    private readonly ILogger<SearchController> _logger = logger;
-
-    [HttpGet]
-    [Authorize(Policy = "IsUser")]
-    public IActionResult Search([FromQuery(Name="st")] string[] searchTerms) =>
-        Ok(
-            new SearchResult
-            {
-                SearchTerms = searchTerms,
-                Entities = [
+    public SearchResult Search(string[] searchTerms);
+}
+public class SearchService : ISearchService
+{
+    public SearchResult Search(string[] searchTerms) =>
+        new()
+        {
+            SearchTerms = searchTerms,
+            Entities = [
                     new() {
                         Id = 1,
                         Substance = new() {
@@ -32,6 +27,5 @@ public class SearchController(ILogger<SearchController> logger) : ControllerBase
                         ],
                     }
                 ],
-            }
-        );
+        };
 }
