@@ -27,14 +27,14 @@ const doLogin = () => {
       return
     }
 
-    const { user, jwt } = event.data as { user?: User; jwt?: string }
+    const user = event.data as User
 
-    if (!user || !jwt) {
+    if (!user) {
       return
     }
 
     try {
-      auth.init(JSON.stringify({ ...user, Jwt: jwt }))
+      auth.init(JSON.stringify({ ...user }))
     } catch (err) {
       console.error('[auth] init failed', err)
     } finally {

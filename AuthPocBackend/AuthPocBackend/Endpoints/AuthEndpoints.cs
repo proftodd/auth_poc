@@ -22,16 +22,14 @@ public static class AuthEndpoints
             [FromServices] IAuthService auth,
             HttpContext ctx) =>
         {
-            var (user, jwt) = await auth.HandleCallbackAsync(code, state);
+            var user = await auth.HandleCallbackAsync(code, state);
             var userJson = JsonSerializer.Serialize(user);
             return Results.Content($@"
+
                 <html>
                     <body>
                         <script>
-                            window.opener.postMessage({{
-                                user: {userJson},
-                                jwt: '{jwt}'
-                            }}, 'http://localhost:5173')
+                            window.opener.postMessage({userJson}, 'http://localhost:5173')
                             console.log('postMessage sent!')
                         </script>
                     </body>

@@ -13,7 +13,7 @@ public interface IAuthService
 {
     public string GetLoginRedirectUrl();
 
-    public Task<(Models.User user, string jwt)> HandleCallbackAsync(string code, string state);
+    public Task<User> HandleCallbackAsync(string code, string state);
 
 }
 
@@ -36,7 +36,7 @@ public class AuthService(IOptions<GithubOptions> github, IOptions<JwtTokenOption
         return $"{_github.AuthUrl}/authorize?{q}";
     }
 
-    public async Task<(Models.User user, string jwt)> HandleCallbackAsync(string code, string state)
+    public async Task<User> HandleCallbackAsync(string code, string state)
     {
         if (state != State)
         {
@@ -78,11 +78,11 @@ public class AuthService(IOptions<GithubOptions> github, IOptions<JwtTokenOption
             throw new InvalidOperationException("Failed to parse Github user.");
         }
 
-        var jwt = GenerateJwt(user);
-        return (user, jwt);
+        var authenticatedUser = GenerateUserWithJwt(user);
+        return authenticatedUser;
     }
 
-    private string GenerateJwt(Models.User user)
+    private User GenerateUserWithJwt(User user)
     {
         var cert = GetCertificateFromStore(_jwt.Thumbprint);
         if (cert == null)
@@ -107,7 +107,17 @@ public class AuthService(IOptions<GithubOptions> github, IOptions<JwtTokenOption
             expires: DateTime.UtcNow.AddDays(1),
             signingCredentials: creds
         );
-        return new JwtSecurityTokenHandler().WriteToken(token);
+
+        return new User
+        {
+            Login = user.Login,
+            Name = user.Name,
+            Url = user.Url,
+            Company = user.Company,
+            OrganizationsUrl = user.OrganizationsUrl,
+            SiteAdmin = user.SiteAdmin,
+            Jwt = new JwtSecurityTokenHandler().WriteToken(token),
+        };
     }
 
     private static X509Certificate2? GetCertificateFromStore(string thumbprint, StoreName storeName = StoreName.My)
