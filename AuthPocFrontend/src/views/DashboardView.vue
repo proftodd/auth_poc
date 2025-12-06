@@ -19,6 +19,7 @@ import { useRouter, useRoute } from 'vue-router'
 import type { SearchResult } from '../models/searchResults.ts'
 import { useAuth } from '../composables/useAuth'
 
+const baseUrl = import.meta.env.VITE_API_URL
 const route = useRoute()
 const router = useRouter()
 const { user, logout } = useAuth()
@@ -47,10 +48,10 @@ const querySubstances = async () => {
     //     return
     // }
     try {
-        fetch("https://localhost:7063/search?st=h2o&st=water", {
-                method: "GET",
+        fetch(`${baseUrl}/search?st=h2o&st=water`, {
+                method: 'GET',
                 headers: {
-                    "Authorization": `Bearer ${user.value!.Jwt}`
+                    'Authorization': `Bearer ${user.value!.Jwt}`
                 }
             })
             .then((res) => res.json())
