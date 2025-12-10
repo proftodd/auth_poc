@@ -10,7 +10,8 @@ import { useAuth, type User } from '@/composables/useAuth'
 
 const router = useRouter()
 const auth = useAuth()
-const url = new URL('https://localhost:7063/auth/login')
+const frontendOrigin = window.location.origin
+const url = new URL(`https://localhost:7055/auth/login?origin=${encodeURIComponent(frontendOrigin)}`)
 const urlString  = url.toString()
 
 const doLogin = () => {
@@ -19,7 +20,7 @@ const doLogin = () => {
   const top = (screen.height - height) / 2
 
   const handleMessage = (event: MessageEvent) => {
-    if (event.origin !== 'https://localhost:7063') {
+    if (event.origin !== 'https://localhost:7055') {
       return
     }
 

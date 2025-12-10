@@ -50,7 +50,7 @@ export function useAuth() {
             return false
         }
         try {
-            const res = await fetch('https://localhost:7063/auth/jwt', {
+            const res = await fetch('https://localhost:7055/auth/jwt', {
                 headers: { Authorization: `Bearer ${user.value.Jwt}` },
             })
             const data = await res.json()

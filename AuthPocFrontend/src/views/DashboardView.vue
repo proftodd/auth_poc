@@ -47,7 +47,7 @@ const querySubstances = async () => {
     //     return
     // }
     try {
-        fetch("https://localhost:7063/search?st=h2o&st=water", {
+        fetch("https://localhost:7055/search?st=H2O&st=Water", {
                 method: "GET",
                 headers: {
                     "Authorization": `Bearer ${user.value!.Jwt}`
