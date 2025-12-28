@@ -10,6 +10,7 @@ export type User = {
     Jwt: string;
 }
 
+const baseUrl = import.meta.env.VITE_API_URL;
 const user = ref<User | null>(null)
 
 function parseJwt(token: string) {
@@ -50,7 +51,7 @@ export function useAuth() {
             return false
         }
         try {
-            const res = await fetch('https://localhost:7055/auth/jwt', {
+            const res = await fetch(`${baseUrl}/auth/jwt`, {
                 headers: { Authorization: `Bearer ${user.value.Jwt}` },
             })
             const data = await res.json()

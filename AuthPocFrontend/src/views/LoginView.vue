@@ -8,10 +8,11 @@
 import { useRouter } from 'vue-router'
 import { useAuth, type User } from '@/composables/useAuth'
 
+const baseUrl = import.meta.env.VITE_API_URL
+const frontendOrigin = window.location.origin
 const router = useRouter()
 const auth = useAuth()
-const frontendOrigin = window.location.origin
-const url = new URL(`https://localhost:7055/auth/login?origin=${encodeURIComponent(frontendOrigin)}`)
+const url = new URL(`${baseUrl}/auth/login?origin=${encodeURIComponent(frontendOrigin)}`)
 const urlString  = url.toString()
 
 const doLogin = () => {
@@ -20,7 +21,7 @@ const doLogin = () => {
   const top = (screen.height - height) / 2
 
   const handleMessage = (event: MessageEvent) => {
-    if (event.origin !== 'https://localhost:7055') {
+    if (event.origin !== baseUrl) {
       return
     }
 
